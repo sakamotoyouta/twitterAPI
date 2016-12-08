@@ -14,6 +14,8 @@ class Conect_twapi{
 		$this->params['q']='#'.$hashtag;
 		$this->params['count']=$count;
 		$this->params['lang']='ja';
+		$this->params['locale']='ja';
+		$this->params['result_type']='recent';
 		// パラメータがある場合
 		if( $this->params ){
 			$this->request_url .= '?' . http_build_query( $this->params ) ;
