@@ -1,53 +1,64 @@
 <?php
-/**************************************************
+require_once 'class/conect-twitter.php';
 
-	ベアラートークンを用いてtweetの取得
+$html = '';
+if(isset($_POST["word"])){
+	$word = $_POST["word"];
+}else{
+	echo "検索ワードを入力してね";
+	return;
+}
+//tweetの取得
+$count = '10';
+$tw_api = new Conect_twapi($word,$count);
+$tweets = $tw_api->get_tweet();
 
-**************************************************/
-class Conect_twapi{
-	public $bearer_token = '';
-	public $request_url = 'https://api.twitter.com/1.1/search/tweets.json' ;
-	public $params = array();
+// エラー判定
+$error = array();
+if( !$tweets['json'] ){
+	$error[] = "データを取得することができませんでした…。設定を見直して下さい。";
+}
+if(empty($tweets['json']['statuses'])){
+	$error[] = '"'.$word.'"ではツイートが見つかりませんでした。';
+}
 
-	function __construct($hashtag,$count){
-		// リクエスト用パラメータ
-		$this->params['q']='#'.$hashtag;
-		$this->params['count']=$count;
-		$this->params['lang']='ja';
-		$this->params['locale']='ja';
-		$this->params['result_type']='recent';
-		// パラメータがある場合
-		if( $this->params ){
-			$this->request_url .= '?' . http_build_query( $this->params ) ;
-		}
+
+if(count($error) > 0){
+	$html .= "<h2>エラー内容</h2>";
+	foreach ($error as $val){
+		$html .= "<p>".$val."</p>";
 	}
+}else{
+	$html .= '<ol>';
+	foreach($tweets['json']['statuses'] as $val){
+		$interval_time = interval($val['created_at']);
+		$li = '<li>';
+		$li .= '<p><img src="'.$val['user']['profile_image_url'].'"></p>';
+		$li .= '<p> name: '.$val['user']['name'].'</p>';
+		$li .= '<p>text: '.htmlspecialchars($val['text']).'</p>';
+		$li .= '<p class="time">'.$interval_time.'</p>';
+		$li .= '</li>';
+		$html .= $li;
+	}
+	$html .= '<ol>';
+}
 
-	public function get_tweet(){
-		// リクエスト用のコンテキスト
-		$context = array(
-			'http' => array(
-				'method' => 'GET' , // リクエストメソッド
-				'header' => array(			  // ヘッダー
-					'Authorization: Bearer ' . $this->bearer_token ,
-				) ,
-			) ,
-		);
-		// cURLを使ってリクエスト
-		$curl = curl_init() ;
-		curl_setopt( $curl , CURLOPT_URL , $this->request_url ) ;
-		curl_setopt( $curl , CURLOPT_HEADER, 1 ) ;
-		curl_setopt( $curl , CURLOPT_CUSTOMREQUEST , $context['http']['method'] ) ;			// メソッド
-		curl_setopt( $curl , CURLOPT_SSL_VERIFYPEER , false ) ;								// 証明書の検証を行わない
-		curl_setopt( $curl , CURLOPT_RETURNTRANSFER , true ) ;								// curl_execの結果を文字列で返す
-		curl_setopt( $curl , CURLOPT_HTTPHEADER , $context['http']['header'] ) ;			// ヘッダー
-		curl_setopt( $curl , CURLOPT_TIMEOUT , 5 ) ;										// タイムアウトの秒数
-		$res1 = curl_exec( $curl ) ;
-		$res2 = curl_getinfo( $curl ) ;
-		curl_close( $curl ) ;
-		// 取得したデータ
-		$json = substr( $res1, $res2['header_size'] ) ;				// 取得したデータ(JSONなど)
-		$header = substr( $res1, 0, $res2['header_size'] ) ;		// レスポンスヘッダー (検証に利用したい場合にどうぞ)
-		$response = array("json"=>$json,"header"=>$header);
-		return $response;
+echo $html;
+
+//時間設定
+function interval($src) {
+	$now = new DateTime();
+	$timestamp = strtotime($src);
+	$created_time = date('Y-m-d H:i:s',$timestamp);
+	$created_time = new DateTime($created_time);
+	$interval = $created_time->diff($now);
+	if($interval->i <= 0){
+		return "たった今";
+	}elseif($interval->h <= 0){
+		return $interval->i."分前";
+	}elseif($interval->d <= 0){
+		return $interval->h."時間前";
+	}elseif ($interval->m <= 0) {
+		return $interval->d."日前";
 	}
 }
