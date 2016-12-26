@@ -29,18 +29,22 @@ if(count($error) > 0){
 		$html .= "<p>".$val."</p>";
 	}
 }else{
-	$html .= '<ol>';
+	$html .= '<div>';
 	foreach($tweets['json']['statuses'] as $val){
 		$interval_time = interval($val['created_at']);
-		$li = '<li>';
-		$li .= '<p><img src="'.$val['user']['profile_image_url'].'"></p>';
-		$li .= '<p> name: '.$val['user']['name'].'</p>';
-		$li .= '<p>text: '.htmlspecialchars($val['text']).'</p>';
-		$li .= '<p class="time">'.$interval_time.'</p>';
-		$li .= '</li>';
+		$li = '<div class="row">';
+		$li .= '<a href="https://twitter.com/'.$val['user']['screen_name'] .'/status/'.$val['id'].'" target="_blank">';
+		$li .= '<img class="col-md-1" src="'.$val['user']['profile_image_url'].'">';
+		$li .= '</a>';
+		$li .= '<div class="col-md-8"';
+		$li .= '<p class="name">'.$val['user']['name'].'</p>';
+		$li .= '<p class="text"><strong>'.htmlspecialchars($val['text']).'</strong></p>';
+		$li .= '<p class="text-danger">'.$interval_time.'</p>';
+		$li .= '</div>';
+		$li .= '</div>';
 		$html .= $li;
 	}
-	$html .= '<ol>';
+	$html .= '</div>';
 }
 
 echo $html;
