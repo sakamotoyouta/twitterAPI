@@ -3,7 +3,7 @@ require_once 'class/conect-twitter.php';
 
 $html = '';
 if(isset($_POST["word"])){
-	$word = $_POST["word"];
+	$word = htmlspecialchars($_POST["word"]);
 }else{
 	echo "検索ワードを入力してね";
 	return;
